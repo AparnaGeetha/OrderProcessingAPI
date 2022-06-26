@@ -2,7 +2,11 @@ package com.project.orderProcessing.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
+@Service
 public class KafkaProducerService {
 
     @Autowired
@@ -10,6 +14,6 @@ public class KafkaProducerService {
 
     public void sendMessage(String message)
     {
-        kafkaTemplate.send("order_processing_topic", message);
+        kafkaTemplate.send("order-processing-topic", message);
     }
 }
