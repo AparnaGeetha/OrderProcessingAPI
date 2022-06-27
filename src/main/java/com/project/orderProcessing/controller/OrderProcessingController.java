@@ -3,20 +3,17 @@ package com.project.orderProcessing.controller;
 import com.project.orderProcessing.model.OrderDetails;
 import com.project.orderProcessing.service.AddOrderDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.project.orderProcessing.service.GetService;
-
-import java.util.Map;
+import com.project.orderProcessing.service.GetOrderDetailsService;
 
 @RestController
 public class OrderProcessingController {
 
     @Autowired
-    GetService getService;
+    GetOrderDetailsService getService;
 
     @Autowired
     AddOrderDetailsService addOrderDetailsService;

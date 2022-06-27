@@ -1,19 +1,18 @@
 package com.project.orderProcessing.service;
 
-import ch.qos.logback.core.net.SyslogOutputStream;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.orderProcessing.model.MongoDetails;
 import com.project.orderProcessing.model.OrderDetails;
 import com.project.orderProcessing.repository.OrderProcessingRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.annotation.Order;
+import org.springframework.boot.logging.log4j2.Log4J2LoggingSystem;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.kafka.core.KafkaProducerException;
 import org.springframework.stereotype.Service;
-
-import java.lang.reflect.MalformedParameterizedTypeException;
-import java.util.Map;
 
 @Service
 public class AddOrderDetailsService {
@@ -27,29 +26,38 @@ public class AddOrderDetailsService {
     @Autowired
     KafkaProducerService kafkaProducerService;
 
+    Logger log = LoggerFactory.getLogger(AddOrderDetailsService.class);
+
     @Autowired
     ObjectMapper objectMapper;
 
     public void addOrderProcessingDetails(OrderDetails orderDetails){
-        System.out.println("Start: Adding data to mongo");
+        log.info("Start: Adding data to mongodb");
         MongoDetails mongoDetails = new MongoDetails();
         mongoDetails.setOrderId(orderDetails.getOrderId());
         mongoDetails.setOrderQuantity(orderDetails.getOrderQuantity());
         mongoDetails.setProductName(orderDetails.getProductName());
         mongoDetails.setOrderStatus(orderDetails.getOrderStatus());
-        orderProcessingRepository.save(mongoDetails);
-        System.out.println("End: Added data to mongo");
-
-        System.out.println("Start: Adding data to kafka");
+        try {
+            orderProcessingRepository.save(mongoDetails);
+            log.info("End: Added data to mongodb");
+        }catch (DataAccessResourceFailureException e) {
+            log.error("Failed to save data to mongodb --> "+e);
+        }
+        log.info("Start: Adding data to kafka");
         String message = null;
         try {
             message = objectMapper.writeValueAsString(orderDetails);
-        } catch (JsonProcessingException e) {
+        }catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-        kafkaProducerService.sendMessage(message);
-        System.out.println("Added data to kafka -->"+message);
-
+        try{
+            kafkaProducerService.sendMessage(message);
+            log.info("Added data to kafka -->"+message);
+        }catch (KafkaProducerException exception) {
+            log.error("Failed to produce data to kafka -->"+exception);
+            throw new RuntimeException(exception);
+        }
     }
 
 }
